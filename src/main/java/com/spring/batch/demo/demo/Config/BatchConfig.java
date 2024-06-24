@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
@@ -48,6 +49,9 @@ public class BatchConfig {
     @Autowired
     private EntityManagerFactory entityManagerFactory;
 
+    @Autowired
+    private TaskExecutor taskExecutor;
+
     @Bean
     public Job excelToDatabaseJob() {
         logger.info("Creating 'excelToDatabaseJob' job bean.");
@@ -64,6 +68,7 @@ public class BatchConfig {
                 .reader(excelEmployeeReader())
                 .processor(processor())
                 .writer(databaseItemWriter())
+                .taskExecutor(taskExecutor)
                 .build();
     }
 
