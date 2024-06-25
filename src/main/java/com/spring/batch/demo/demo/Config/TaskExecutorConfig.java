@@ -30,9 +30,9 @@ public class TaskExecutorConfig {
 
             }
         };
-        taskExecutor.setCorePoolSize(4);
-        taskExecutor.setMaxPoolSize(8);
-        taskExecutor.setQueueCapacity(50);
+        taskExecutor.setCorePoolSize(10);
+        taskExecutor.setMaxPoolSize(20);
+        taskExecutor.setQueueCapacity(100);
         taskExecutor.setThreadNamePrefix("batch-thread-");
         taskExecutor.setRejectedExecutionHandler(new CustomRejectedExecutionHandler());
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);

@@ -7,19 +7,21 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/batch")
 public class BatchController {
@@ -34,41 +36,37 @@ public class BatchController {
     private ExportService exportService;
 
     @PostMapping("/upload/{id}")
-    public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file, @PathVariable String id) throws Exception {
-        batchService.processJob(file, id);
-        return ResponseEntity.ok("File uploaded and processing started.");
-    }
-
-
-    @GetMapping("/data")
-    public ResponseEntity<Resource> exportData(@RequestParam("tableName") String tableName, @RequestParam("format") String format) {
+    public ResponseEntity<Map<String, Object>> uploadExcel(@RequestParam("file") MultipartFile file, @PathVariable String id) {
+        Map<String, Object> response = new HashMap<>();
         try {
-            String fileName = tableName + "_export." + format.toLowerCase();
-            ByteArrayResource resource = exportService.exportData(tableName, format);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
-
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentType(MediaType.parseMediaType(getContentType(format)))
-                    .body(resource);
+            batchService.processJob(file, id);
+            response.put("statusMessage", "File uploaded and processing started.");
+            response.put("statusCode", 200);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            e.printStackTrace();
+            response.put("statusMessage", "Failed to process upload: " + e.getMessage());
+            response.put("statusCode", 500);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    private String getContentType(String format) {
-        switch (format.toLowerCase()) {
-            case "xls":
-            case "xlsx":
-                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            case "csv":
-                return "text/csv";
-            default:
-                throw new IllegalArgumentException("Unsupported format: " + format);
+    @GetMapping("/employees")
+    public ResponseEntity<Map<String, Object>> exportEmployees(@RequestParam("format") String format) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            batchService.exportData(format);
+            response.put("statusMessage", "Export job submitted successfully.");
+            response.put("statusCode", 200);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("statusMessage", "Failed to submit export job: " + e.getMessage());
+            response.put("statusCode", 500);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
 }
 
 

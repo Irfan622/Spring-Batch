@@ -1,24 +1,22 @@
 package com.spring.batch.demo.demo.BatchService;
+import org.springframework.batch.core.*;
 
-import com.opencsv.CSVParser;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import com.spring.batch.demo.demo.BatchHelper.WorkbookProcessor;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 
 
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 
 @Service
 public class BatchService {
@@ -32,7 +30,12 @@ public class BatchService {
     private Job excelToDatabaseJob;
 
     @Autowired
+    private Job exportDataFromDatabaseJob;
+
+    @Autowired
     WorkbookProcessor workbookProcessor;
+
+    public static String fileName="";
 
     public void processJob(MultipartFile file, String id) throws Exception {
         logger.info("Processing job with file: {} and id: {}", file.getOriginalFilename(), id);
@@ -56,4 +59,24 @@ public class BatchService {
 
         logger.info("Job launched successfully for file: {} and id: {}", file.getOriginalFilename(), id);
     }
+
+    public String exportData(String format) throws Exception {
+        String fileName = getFileName(format);
+
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("fileName", fileName)
+                .toJobParameters();
+
+        jobLauncher.run(exportDataFromDatabaseJob, jobParameters);
+
+        return fileName;
+    }
+
+    private String getFileName(String format) {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        fileName="target/employees_" + timestamp + "." + format;
+        return "target/employees_" + timestamp + "." + format;
+    }
+
+
 }
